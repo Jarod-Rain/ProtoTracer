@@ -6,3 +6,4 @@
 .pio/build/*/*/
 .pio/build/*/*/*/
 src/Morph/Commissions
+build/*
