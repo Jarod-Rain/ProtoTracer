@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <IntervalTimer.h>
+#include "..\Sensors\SSD1306.h"
 
 template<uint8_t menuCount>
 class MenuHandler{
@@ -16,6 +17,7 @@ private:
     static uint8_t pin;
     static bool holdingState;
     static bool previousState;
+    static SSD1306 screen;
 
     static void UpdateState(){
         long currentTime = millis();
@@ -35,17 +37,20 @@ private:
         }
         
         if(timeOn > holdingTime && pinState){
-            previousMillisHold = currentTime;
-
+            previousMillisHold = currentTime;            
             WriteEEPROM(currentMenu, currentValue[currentMenu]);
-
+            screen.SettingUnderline(currentMenu, SSD1306_BLACK);
             currentMenu += 1;
             if (currentMenu >= menuCount) currentMenu = 0;
+            screen.SettingUnderline(currentMenu, SSD1306_WHITE);
+            screen.Display();
         } else if(timeOn > 50 && pinState){
             previousMillisHold = currentTime;
-
+            screen.SettingValueUnderline(currentMenu, currentValue[currentMenu], SSD1306_BLACK);
             currentValue[currentMenu] += 1;
             if (currentValue[currentMenu] >= maxValue[currentMenu]) currentValue[currentMenu] = 0;
+            screen.SettingValueUnderline(currentMenu, currentValue[currentMenu], SSD1306_WHITE);
+            screen.Display();
         }
     }
 
@@ -78,6 +83,7 @@ public:
             currentValue[i] = ReadEEPROM(i);
         }
 
+        screen.Begin(maxValue);
         return ReadEEPROM(menuCount + 1) != 255;
     }
 
@@ -95,7 +101,8 @@ public:
 
     static void SetMenuMax(uint8_t menu, uint8_t maxValue){
         if(menu >= menuCount) return;
-
+        screen.MenuLine(menu, maxValue);
+        screen.SettingValueUnderline(menu, currentValue[menu], SSD1306_WHITE);
         MenuHandler::maxValue[menu] = maxValue;
     }
 
@@ -109,6 +116,8 @@ public:
     
 };
 
+template<uint8_t menuCount>
+SSD1306 MenuHandler<menuCount>::screen;
 template<uint8_t menuCount>
 IntervalTimer MenuHandler<menuCount>::menuChangeTimer;
 template<uint8_t menuCount>

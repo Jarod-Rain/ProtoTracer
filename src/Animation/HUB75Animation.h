@@ -24,7 +24,7 @@
 
 #include "..\Signals\FFTVoiceDetection.h"
 
-#include "..\Sensors\MicrophoneFourier_MAX9814.h"
+#include "..\Sensors\MicrophoneFourier_DMA.h"
 
 #include "..\Render\ObjectAlign.h"
 
@@ -49,6 +49,9 @@ private:
     SimpleMaterial blueMaterial = SimpleMaterial(RGBColor(0, 0, 255));
     SimpleMaterial yellowMaterial = SimpleMaterial(RGBColor(255, 255, 0));
     SimpleMaterial purpleMaterial = SimpleMaterial(RGBColor(255, 0, 255));
+
+    SimpleMaterial pinkMaterial = SimpleMaterial(RGBColor(255,20,147));
+    SimpleMaterial darkPurpleMaterial = SimpleMaterial(RGBColor(87, 0, 87));
     
     RGBColor gradientSpectrum[2] = {RGBColor(255, 0, 0), RGBColor(255, 0, 0)};
     GradientMaterial<2> gradientMat = GradientMaterial<2>(gradientSpectrum, 350.0f, false);
@@ -138,15 +141,15 @@ private:
 
     void SetMaterialLayers(){
         materialAnimator.SetBaseMaterial(Material::Add, &gradientMat);
-        materialAnimator.AddMaterial(Material::Replace, &yellowMaterial, 40, 0.0f, 1.0f);//layer 1
-        materialAnimator.AddMaterial(Material::Replace, &orangeMaterial, 40, 0.0f, 1.0f);//layer 2
         materialAnimator.AddMaterial(Material::Replace, &whiteMaterial, 40, 0.0f, 1.0f);//layer 3
         materialAnimator.AddMaterial(Material::Replace, &greenMaterial, 40, 0.0f, 1.0f);//layer 4
         materialAnimator.AddMaterial(Material::Replace, &purpleMaterial, 40, 0.0f, 1.0f);//layer 5
         materialAnimator.AddMaterial(Material::Replace, &redMaterial, 40, 0.0f, 1.0f);//layer 6
         materialAnimator.AddMaterial(Material::Replace, &blueMaterial, 40, 0.0f, 1.0f);//layer 7
-        materialAnimator.AddMaterial(Material::Replace, &rainbowSpiral, 40, 0.0f, 1.0f);//layer 8
-        materialAnimator.AddMaterial(Material::Replace, &rainbowNoise, 40, 0.15f, 1.0f);//layer 9
+        materialAnimator.AddMaterial(Material::Replace, &pinkMaterial, 40, 0.0f, 1.0f);//layer 8
+        materialAnimator.AddMaterial(Material::Replace, &darkPurpleMaterial, 40, 0.0f, 1.0f);//layer 9
+        materialAnimator.AddMaterial(Material::Replace, &rainbowSpiral, 40, 0.0f, 1.0f);//layer 10
+        materialAnimator.AddMaterial(Material::Replace, &rainbowNoise, 40, 0.15f, 1.0f);//layer 11
 
         backgroundMaterial.SetBaseMaterial(Material::Add, Menu::GetMaterial());
         backgroundMaterial.AddMaterial(Material::Add, &sA, 20, 0.0f, 1.0f);
@@ -216,10 +219,10 @@ private:
 
     void UpdateFFTVisemes(){
         if(Menu::UseMicrophone()){
-            eEA.AddParameterFrame(NukudeFace::vrc_v_ss, MicrophoneFourierIT::GetCurrentMagnitude() / 2.0f);
+            eEA.AddParameterFrame(NukudeFace::vrc_v_ss, MicrophoneFourier::GetCurrentMagnitude() / 2.0f);
 
-            if(MicrophoneFourierIT::GetCurrentMagnitude() > 0.05f){
-                voiceDetection.Update(MicrophoneFourierIT::GetFourierFiltered(), MicrophoneFourierIT::GetSampleRate());
+            if(MicrophoneFourier::GetCurrentMagnitude() > 0.05f){
+                voiceDetection.Update(MicrophoneFourier::GetFourierFiltered(), MicrophoneFourier::GetSampleRate());
         
                 eEA.AddParameterFrame(NukudeFace::vrc_v_ee, voiceDetection.GetViseme(voiceDetection.EE));
                 eEA.AddParameterFrame(NukudeFace::vrc_v_ih, voiceDetection.GetViseme(voiceDetection.AH));
@@ -234,15 +237,15 @@ private:
 
     void SetMaterialColor(){
         switch(Menu::GetFaceColor()){
-            case 1: materialAnimator.AddMaterialFrame(yellowMaterial, 0.8f); break;
-            case 2: materialAnimator.AddMaterialFrame(orangeMaterial, 0.8f); break;
             case 3: materialAnimator.AddMaterialFrame(whiteMaterial, 0.8f); break;
             case 4: materialAnimator.AddMaterialFrame(greenMaterial, 0.8f); break;
             case 5: materialAnimator.AddMaterialFrame(purpleMaterial, 0.8f); break;
             case 6: materialAnimator.AddMaterialFrame(redMaterial, 0.8f); break;
             case 7: materialAnimator.AddMaterialFrame(blueMaterial, 0.8f); break;
-            case 8: materialAnimator.AddMaterialFrame(rainbowSpiral, 0.8f); break;
-            case 9: materialAnimator.AddMaterialFrame(rainbowNoise, 0.8f); break;
+            case 8: materialAnimator.AddMaterialFrame(darkPurpleMaterial, 0.8f); break;
+            case 9: materialAnimator.AddMaterialFrame(pinkMaterial, 0.8f); break;
+            case 10: materialAnimator.AddMaterialFrame(rainbowSpiral, 0.8f); break;
+            case 11: materialAnimator.AddMaterialFrame(rainbowNoise, 0.8f); break;
             default: break;
         }
     }
@@ -274,7 +277,7 @@ public:
     void Initialize() override {
         this->boopExists = boop.Initialize(5);
 
-        MicrophoneFourierIT::Initialize(A2, 8000, 50.0f, 120.0f);//8KHz sample rate, 50dB min, 120dB max
+        MicrophoneFourier::Initialize(A0, -1, 48000, 50.0f, 120.0f, true);//8KHz sample rate, 50dB min, 120dB max
         //Menu::Initialize(9);//NeoTrellis
         Menu::Initialize(9, 20, 500);//7 is number of faces
     }
@@ -315,7 +318,7 @@ public:
         uint8_t mode = Menu::GetFaceState();//change by button press
 
 
-        MicrophoneFourierIT::Update();
+        MicrophoneFourier::Update();
         sA.SetHueAngle(ratio * 360.0f * 4.0f);
         sA.SetMirrorYState(Menu::MirrorSpectrumAnalyzer());
         sA.SetFlipYState(!Menu::MirrorSpectrumAnalyzer());
@@ -350,15 +353,15 @@ public:
             else if (mode == 4) LookUp();
             else if (mode == 5) Sad();
             else if (mode == 6) {
-                aRG.Update(MicrophoneFourierIT::GetFourierFiltered());
+                aRG.Update(MicrophoneFourier::GetFourierFiltered());
                 AudioReactiveGradientFace();
             }
             else if (mode == 7){
-                oSC.Update(MicrophoneFourierIT::GetSamples());
+                oSC.Update(MicrophoneFourier::GetSamples());
                 OscilloscopeFace();
             }
             else {
-                sA.Update(MicrophoneFourierIT::GetFourierFiltered());
+                sA.Update(MicrophoneFourier::GetFourierFiltered());
                 SpectrumAnalyzerFace();
             }
         }

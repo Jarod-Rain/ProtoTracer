@@ -8,7 +8,7 @@
 #include "..\Morph\NukudeFace.h"
 #include "..\Render\Scene.h"
 #include "..\Signals\FunctionGenerator.h"
-#include "..\Menu\SingleButtonMenu.h"
+#include "..\Menu\Menu.h"
 //#include "..\Menu\NeoTrellisMenu.h"
 #include "..\Sensors\APDS9960.h"
 
@@ -45,8 +45,11 @@ private:
     SimpleMaterial blueMaterial = SimpleMaterial(RGBColor(0, 0, 255));
     SimpleMaterial yellowMaterial = SimpleMaterial(RGBColor(255, 255, 0));
     SimpleMaterial purpleMaterial = SimpleMaterial(RGBColor(255, 0, 255));
+
+    //SimpleMaterial pinkMaterial = SimpleMaterial(RGBColor(255,20,147));
+    //SimpleMaterial darkPurpleMaterial = SimpleMaterial(RGBColor(87, 0, 87));
     
-    RGBColor gradientSpectrum[2] = {RGBColor(255, 0, 0), RGBColor(0, 0, 255)};
+    RGBColor gradientSpectrum[2] = {RGBColor(255, 0, 0), RGBColor(255, 0, 0)};
     GradientMaterial<2> gradientMat = GradientMaterial<2>(gradientSpectrum, 350.0f, false);
     
     MaterialAnimator<10> materialAnimator;
@@ -133,15 +136,18 @@ private:
 
     void SetMaterialLayers(){
         materialAnimator.SetBaseMaterial(Material::Add, &gradientMat);
-        materialAnimator.AddMaterial(Material::Replace, &orangeMaterial, 40, 0.0f, 1.0f);//layer 1
-        materialAnimator.AddMaterial(Material::Replace, &whiteMaterial, 40, 0.0f, 1.0f);//layer 2
-        materialAnimator.AddMaterial(Material::Replace, &greenMaterial, 40, 0.0f, 1.0f);//layer 3
-        materialAnimator.AddMaterial(Material::Replace, &yellowMaterial, 40, 0.0f, 1.0f);//layer 4
+        materialAnimator.AddMaterial(Material::Replace, &yellowMaterial, 40, 0.0f, 1.0f);//layer 1
+        materialAnimator.AddMaterial(Material::Replace, &orangeMaterial, 40, 0.0f, 1.0f);//layer 2
+        materialAnimator.AddMaterial(Material::Replace, &whiteMaterial, 40, 0.0f, 1.0f);//layer 3
+        materialAnimator.AddMaterial(Material::Replace, &greenMaterial, 40, 0.0f, 1.0f);//layer 4
         materialAnimator.AddMaterial(Material::Replace, &purpleMaterial, 40, 0.0f, 1.0f);//layer 5
         materialAnimator.AddMaterial(Material::Replace, &redMaterial, 40, 0.0f, 1.0f);//layer 6
         materialAnimator.AddMaterial(Material::Replace, &blueMaterial, 40, 0.0f, 1.0f);//layer 7
         materialAnimator.AddMaterial(Material::Replace, &rainbowSpiral, 40, 0.0f, 1.0f);//layer 8
-        materialAnimator.AddMaterial(Material::Add, &rainbowNoise, 40, 0.5f, 1.0f);//layer 9
+        materialAnimator.AddMaterial(Material::Replace, &rainbowNoise, 40, 0.15f, 1.0f);//layer 9
+
+        //materialAnimator.AddMaterial(Material::Replace, &pinkMaterial, 40, 0.0f, 1.0f);//layer 10
+        //materialAnimator.AddMaterial(Material::Replace, &darkPurpleMaterial, 40, 0.0f, 1.0f);//layer 11
 
         backgroundMaterial.SetBaseMaterial(Material::Add, Menu::GetMaterial());
         backgroundMaterial.AddMaterial(Material::Add, &sA, 20, 0.0f, 1.0f);
@@ -229,15 +235,18 @@ private:
 
     void SetMaterialColor(){
         switch(Menu::GetFaceColor()){
-            case 1: materialAnimator.AddMaterialFrame(redMaterial, 0.8f); break;
+            case 1: materialAnimator.AddMaterialFrame(yellowMaterial, 0.8f); break;
             case 2: materialAnimator.AddMaterialFrame(orangeMaterial, 0.8f); break;
             case 3: materialAnimator.AddMaterialFrame(whiteMaterial, 0.8f); break;
             case 4: materialAnimator.AddMaterialFrame(greenMaterial, 0.8f); break;
-            case 5: materialAnimator.AddMaterialFrame(blueMaterial, 0.8f); break;
-            case 6: materialAnimator.AddMaterialFrame(yellowMaterial, 0.8f); break;
-            case 7: materialAnimator.AddMaterialFrame(purpleMaterial, 0.8f); break;
+            case 5: materialAnimator.AddMaterialFrame(purpleMaterial, 0.8f); break;
+            case 6: materialAnimator.AddMaterialFrame(redMaterial, 0.8f); break;
+            case 7: materialAnimator.AddMaterialFrame(blueMaterial, 0.8f); break;
             case 8: materialAnimator.AddMaterialFrame(rainbowSpiral, 0.8f); break;
             case 9: materialAnimator.AddMaterialFrame(rainbowNoise, 0.8f); break;
+
+            //case 10: materialAnimator.AddMaterialFrame(darkPurpleMaterial, 0.8f); break;
+            //case 11: materialAnimator.AddMaterialFrame(pinkMaterial, 0.8f); break;
             default: break;
         }
     }

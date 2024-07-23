@@ -106,7 +106,7 @@ private:
         MenuHandler<menuCount>::SetMenuMax(BoopSensor, 2);
         MenuHandler<menuCount>::SetMenuMax(SpectrumMirror, 2);
         MenuHandler<menuCount>::SetMenuMax(FaceSize, 10);
-        MenuHandler<menuCount>::SetMenuMax(Color, 10);
+        MenuHandler<menuCount>::SetMenuMax(Color, 12);
         MenuHandler<menuCount>::SetMenuMax(HueF, 10);
         MenuHandler<menuCount>::SetMenuMax(HueB, 10);
         MenuHandler<menuCount>::SetMenuMax(EffectS, 10);
@@ -116,12 +116,12 @@ private:
         MenuHandler<menuCount>::SetDefaultValue(Faces, 0);
         MenuHandler<menuCount>::SetDefaultValue(Bright, 3);
         MenuHandler<menuCount>::SetDefaultValue(AccentBright, 5);
-        MenuHandler<menuCount>::SetDefaultValue(Microphone, 1);
+        MenuHandler<menuCount>::SetDefaultValue(Microphone, 0);
         MenuHandler<menuCount>::SetDefaultValue(MicLevel, 5);
-        MenuHandler<menuCount>::SetDefaultValue(BoopSensor, 1);
+        MenuHandler<menuCount>::SetDefaultValue(BoopSensor, 0);
         MenuHandler<menuCount>::SetDefaultValue(SpectrumMirror, 0);
         MenuHandler<menuCount>::SetDefaultValue(FaceSize, 0);
-        MenuHandler<menuCount>::SetDefaultValue(Color, 0);
+        MenuHandler<menuCount>::SetDefaultValue(Color, 10);
         MenuHandler<menuCount>::SetDefaultValue(HueF, 0);
         MenuHandler<menuCount>::SetDefaultValue(HueB, 0);
         MenuHandler<menuCount>::SetDefaultValue(EffectS, 0);
@@ -223,6 +223,10 @@ public:
     }
 
     static void Update(float ratio){
+        #ifdef NEOTRELLISMENU;
+        MenuHandler<menuCount>::Update();
+        #endif
+
         float target = 0.0f;
         float menuTarget = 0.0f;
 
@@ -309,6 +313,16 @@ public:
             case '7': return '|';
             case '8': return '}';
             case '9': return '~';
+            case 'A': return 'a';
+            case 'B': return 'b';
+            case 'C': return 'c';
+            case 'D': return 'd';
+            case 'E': return 'e';
+            case 'F': return 'f';
+            case 'G': return 'g';
+            case 'H': return 'h';
+            case 'I': return 'i';
+            case 'J': return 'j';
             default: return ' ';
         }
     }
@@ -332,10 +346,30 @@ public:
                     text += value;
                 }
             }
-            else if (selection >= 5 && i + 5 < options){
+            else if (selection >= 5 && selection < 10 && i + 5 < options){
                 char value = '5' + i;
 
                 if(i + 5 == selection){
+                    text += IntToBlink(value);
+                }
+                else{
+                    text += value;
+                }
+            }
+            else if (selection >= 10 && selection < 15 && i + 10 < options){
+                char value = 'A' + i;
+
+                if(i + 10 == selection){
+                    text += IntToBlink(value);
+                }
+                else{
+                    text += value;
+                }
+            }
+            else if (selection >= 15 && selection < 20 && i + 15 < options){
+                char value = 'F' + i;
+
+                if(i + 15 == selection){
                     text += IntToBlink(value);
                 }
                 else{
@@ -364,7 +398,7 @@ public:
         line2 += UseBoopSensor() ? "   on OFF   " : "   ON off   ";
         line2 += MirrorSpectrumAnalyzer() ? "   on OFF   " : "   ON off   ";
         line2 += GenerateLine(10, GetFaceSize());
-        line2 += GenerateLine(10, GetFaceColor());
+        line2 += GenerateLine(12, GetFaceColor());
         line2 += GenerateLine(10, GetHueF());
         line2 += GenerateLine(10, GetHueB());
         line2 += GenerateLine(10, GetEffectS());

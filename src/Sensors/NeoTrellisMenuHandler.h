@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include "Adafruit_NeoTrellis.h"
+#include "..\Sensors\SSD1306.h"
 
 Adafruit_NeoTrellis trellis;
 
@@ -16,6 +17,7 @@ private:
     static uint8_t faceChoices;
     static bool menuActive;
     static bool isReady;
+    static SSD1306 screen;
 
     static uint32_t Wheel(byte WheelPos){
         WheelPos = 255 - WheelPos;
@@ -36,10 +38,17 @@ private:
         if (evt.bit.EDGE == SEESAW_KEYPAD_EDGE_RISING) {
             trellis.pixels.setPixelColor(evt.bit.NUM, Wheel(map(uint16_t(evt.bit.NUM), uint16_t(0), trellis.pixels.numPixels(), uint16_t(0), uint16_t(255))));
             if (evt.bit.NUM < 8){//Set face on current page
+                menuActive = false;
                 currentMenu = 0;
+                screen.SettingUnderline(currentMenu, SSD1306_WHITE);
+                screen.SettingValueUnderline(currentMenu, currentValue[currentMenu], SSD1306_BLACK);
                 currentValue[0] = evt.bit.NUM + 8 * faceChoices;
+                WriteEEPROM(currentMenu, currentValue[currentMenu]);
+                screen.SettingValueUnderline(currentMenu, currentValue[currentMenu], SSD1306_WHITE);
+                screen.Display();
             }
             else if(evt.bit.NUM >= 8 && evt.bit.NUM < 12){//Set face page
+                menuActive = false;
                 currentMenu = 0;
                 faceChoices = evt.bit.NUM - 8;
             }
@@ -49,28 +58,61 @@ private:
                 if(menuActive){
                     currentSetting = currentSetting == 0 ? 1 : currentSetting;
                     currentMenu = currentSetting;
+                    screen.SettingUnderline(currentMenu, SSD1306_WHITE);
+                    screen.SettingUnderline(0, SSD1306_BLACK);
                 }
                 else{
                     WriteEEPROM(currentMenu, currentValue[currentSetting]);
-                    
+                    screen.SettingUnderline(0, SSD1306_WHITE);
+                    screen.SettingValueUnderline(currentMenu, currentValue[currentMenu], SSD1306_WHITE);
+                    screen.Display();
                     currentMenu = 0;
                 }
             }
             else if(evt.bit.NUM == 13){//Change current menu forward
-                WriteEEPROM(currentMenu, currentValue[currentSetting]);
-
-                currentSetting = currentSetting + 1 > menuCount ? menuCount : currentSetting + 1;
-                currentMenu = currentSetting;
+                if (menuActive){
+                    WriteEEPROM(currentMenu, currentValue[currentSetting]);
+                    screen.SettingUnderline(0, SSD1306_BLACK);
+                    screen.SettingUnderline(currentMenu, SSD1306_BLACK);
+                    //currentSetting = currentSetting + 1 > menuCount ? menuCount : currentSetting + 1;
+                    if (currentSetting+1 > menuCount-1){
+                        currentSetting = menuCount-1;
+                        currentMenu = currentSetting;
+                        screen.SettingValueUnderline(currentMenu, currentValue[currentMenu], SSD1306_WHITE);
+                    }
+                    else{
+                        currentSetting = currentSetting+1;
+                        currentMenu = currentSetting;
+                        screen.SettingValueUnderline(currentMenu-1, currentValue[currentMenu-1], SSD1306_WHITE);
+                    }
+                    screen.SettingUnderline(currentMenu, SSD1306_WHITE);
+                    screen.Display();
+                }
             }
             else if(evt.bit.NUM == 14){//Change current menu backward
-                WriteEEPROM(currentMenu, currentValue[currentSetting]);
-
-                currentSetting = currentSetting - 1 == 0 ? 1 : currentSetting - 1;
-                currentMenu = currentSetting;
+                if (menuActive){
+                    WriteEEPROM(currentMenu, currentValue[currentSetting]);
+                    screen.SettingUnderline(0, SSD1306_BLACK);
+                    screen.SettingUnderline(currentMenu, SSD1306_BLACK);
+                    //currentSetting = currentSetting - 1 == 0 ? 1 : currentSetting - 1;
+                    if (currentSetting-1 == 0){
+                        currentSetting = 1;
+                        currentMenu = currentSetting;
+                        screen.SettingValueUnderline(currentMenu, currentValue[currentMenu], SSD1306_WHITE);
+                    }
+                    else{
+                        currentSetting = currentSetting-1;
+                        currentMenu = currentSetting;
+                        screen.SettingValueUnderline(currentMenu+1, currentValue[currentMenu+1], SSD1306_WHITE);
+                    }
+                    screen.SettingUnderline(currentMenu, SSD1306_WHITE);
+                    screen.Display();
+                }
             }
-            else if(evt.bit.NUM == 15){
+            else if(evt.bit.NUM == 15 && menuActive){
+                screen.SettingValueUnderline(currentMenu, currentValue[currentMenu], SSD1306_BLACK);
                 currentValue[currentSetting] += 1;
-                if (currentValue[currentSetting] >= maxValue[currentSetting]) currentValue[currentSetting] = 0;
+                if (currentValue[currentSetting] >= maxValue[currentSetting])currentValue[currentSetting] = 0;
             }
         } else if (evt.bit.EDGE == SEESAW_KEYPAD_EDGE_FALLING) {
             trellis.pixels.setPixelColor(evt.bit.NUM, 0);
@@ -96,6 +138,9 @@ public:
         if(isReady){
             trellis.read();
         }
+        if(menuActive){
+            screen.BlinkCurrentSetting(currentMenu, currentValue[currentMenu]);
+        }
     }
 
     static bool Initialize(){//if true, eeprom needs set
@@ -115,12 +160,14 @@ public:
             isReady = true;
 
             Serial.println("NeoPixel Trellis started");
+            screen.SetBlinkTime(200);
         }
 
         for (uint8_t i = 0; i < menuCount; i++){
             currentValue[i] = ReadEEPROM(i);
         }
 
+        screen.Begin(maxValue);
         return ReadEEPROM(menuCount + 1) != 255;
     }
 
@@ -129,6 +176,8 @@ public:
 
         currentValue[menu] = value;
 
+        Serial.printf("Menu %i set to %i\n",menu, value);
+        
         WriteEEPROM(menu, value);
     }
 
@@ -138,7 +187,8 @@ public:
 
     static void SetMenuMax(uint8_t menu, uint8_t maxValue){
         if(menu >= menuCount) return;
-
+        screen.MenuLine(menu, maxValue);
+        screen.SettingValueUnderline(menu, currentValue[menu], SSD1306_WHITE);
         MenuHandler::maxValue[menu] = maxValue;
     }
 
@@ -152,6 +202,8 @@ public:
     
 };
 
+template<uint8_t menuCount>
+SSD1306 MenuHandler<menuCount>::screen;
 template<uint8_t menuCount>
 uint8_t MenuHandler<menuCount>::currentMenu;
 template<uint8_t menuCount>
